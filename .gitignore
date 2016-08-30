@@ -1,0 +1,7 @@
+# Files and directories created by pub
+.packages
+.pub/
+.idea/*
+*.iml
+packages
+pubspec.lock
