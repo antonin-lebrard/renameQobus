@@ -1,4 +1,3 @@
-
 import 'dart:io';
 
 main(List<String> args) {
@@ -11,8 +10,11 @@ main(List<String> args) {
   d.listSync().forEach((FileSystemEntity f){
     if (f.path.endsWith(".flac")){
       String filename = "" + f.uri.pathSegments.last;
+      // 0[noDisc]-[noSong][noSong]-[Artist]-[SongName]-LLS.flac
       print("renaming $filename");
+      // [noSong][noSong]-[Artist]-[SongName]
       filename = filename.substring(3, filename.length-("-LLS.flac".length));
+      // [noSong][noSong]-[SongName]
       filename = filename.substring(0, 3) + filename.substring(filename.indexOf("-", 4)+1, filename.length);
       filename = filename.replaceAll("_", " ");
       print("to $filename");
