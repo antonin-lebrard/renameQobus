@@ -12,6 +12,43 @@ main(List<String> args) {
      print("${args[0]} does not exist");
      return;
   }
+  // support for multiple disc
+  bool hasOtherDisc = false;
+  int currentMaxNoSong = 0;
+  do {
+	hasOtherDisc = false;
+	d.listSync().forEach((FileSystemEntity f) {
+		String filename = "" + f.uri.pathSegments.last;
+		if (f.path.endsWith(".flac")) {
+			String noDisc = filename.substring(0, 2);
+			String noSong = filename.substring(3, 5);
+			if (noDisc == "01")
+				currentMaxNoSong++;
+			if (noDisc == "02")
+				hasOtherDisc = true;
+		}
+	});
+	d.listSync().forEach((FileSystemEntity f) {
+		String filename = "" + f.uri.pathSegments.last;
+		if (f.path.endsWith(".flac")) {
+			String noDisc = filename.substring(0, 2);
+			String noSong = filename.substring(3, 5);
+			String restOfName = filename.substring(5);
+			int numDisc = int.parse(noDisc);
+			int numSong = int.parse(noSong);
+			if (noDisc == "02") {
+				numSong += currentMaxNoSong;
+				noSong = numSong < 10 ? "0$numSong" : "$numSong";
+				f.renameSync(f.uri.pathSegments.getRange(0, f.uri.pathSegments.length - 1).join("\\") + "\\01-$noSong-$restOfName");
+			}
+			if (numDisc > 2){
+				numDisc--;
+				noDisc = numDisc < 10 ? "0$numDisc" : "$numDisc";
+				f.renameSync(f.uri.pathSegments.getRange(0, f.uri.pathSegments.length - 1).join("\\") + "\\$noDisc-$noSong-$restOfName");
+			}
+		}
+	});
+  } while(hasOtherDisc);
   String dirName = d.uri.pathSegments[d.uri.pathSegments.length-2];
   String artistName = dirName.substring(0, dirName.indexOf('-')).replaceAll('_', ' ');
   String albumName = dirName.substring(dirName.indexOf('-') + 1, dirName.length).replaceAll('_', ' ');
