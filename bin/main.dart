@@ -49,15 +49,27 @@ main(List<String> args) {
 		}
 	});
   } while(hasOtherDisc);
+
   String dirName = d.uri.pathSegments[d.uri.pathSegments.length-2];
   String artistName = dirName.substring(0, dirName.indexOf('-')).replaceAll('_', ' ');
   String albumName = dirName.substring(dirName.indexOf('-') + 1, dirName.length).replaceAll('_', ' ');
   String ArtistPath = d.uri.pathSegments.getRange(0, d.uri.pathSegments.length-2).join("\\") + "\\" + artistName + "\\";
   String AlbumPath = ArtistPath + albumName + "\\";
+
+  // Move already present files in artist folder to a temp folder
+  Directory previousArtist = new Directory.fromUri(new Uri.directory(ArtistPath, windows: true));
+  String tempArtistPath = null;
+  if (previousArtist.existsSync()){
+    // path from .../[ArtistName] to .../____temp____
+    tempArtistPath =
+        previousArtist.uri.pathSegments.getRange(0, previousArtist.uri.pathSegments.length-2).join("\\")
+            + "\\" + "____temp____" + "\\";
+    previousArtist.renameSync(tempArtistPath);
+  }
+
   d.renameSync(ArtistPath);
   Directory album = new Directory.fromUri(new Uri.directory(AlbumPath, windows: true));
   album.createSync();
-  List<FileSystemEntity> filesToMove = new List();
   d = new Directory.fromUri(new Uri.directory(ArtistPath, windows: true));
   d.listSync().forEach((FileSystemEntity f) {
     if (FileSystemEntity.isFileSync(f.path)) {
@@ -74,9 +86,33 @@ main(List<String> args) {
         print("to $filename");
       }
       f.renameSync(f.uri.pathSegments.getRange(0, f.uri.pathSegments.length - 1).join("\\") + "\\$albumName\\$filename");
-      filesToMove.add(f);
     }
   });
+
+  // Move back previous files into the artist folder
+  if (tempArtistPath != null) {
+    previousArtist = new Directory.fromUri(new Uri.directory(tempArtistPath, windows: true));
+    previousArtist.listSync().forEach((FileSystemEntity f) {
+      int pathLen = f.uri.pathSegments.length;
+      if (FileSystemEntity.isDirectorySync(f.path)){
+        String correctedPath = f.uri.pathSegments.getRange(0, pathLen - 3).join("\\")
+            + "\\$artistName\\"
+            + f.uri.pathSegments.getRange(pathLen - 2, pathLen - 1).join()
+            + "\\";
+        //print(correctedPath);
+        f.renameSync(correctedPath);
+      }
+      else if (FileSystemEntity.isFileSync(f.path)){
+        String correctedPath = f.uri.pathSegments.getRange(0, pathLen - 2).join("\\")
+            + "\\$artistName\\"
+            + f.uri.pathSegments.getRange(pathLen - 1, pathLen).join()
+            + "\\";
+        //print(correctedPath);
+        f.renameSync(correctedPath);
+      }
+    });
+    previousArtist.deleteSync();
+  }
 }
 
 void showHelp(){
