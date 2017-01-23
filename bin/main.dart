@@ -8,6 +8,7 @@ main(List<String> args) {
   }
   // [ArtistName]-[AlbumName]
   Directory d = new Directory.fromUri(new Uri.directory(args[0], windows: true));
+  d = d.absolute;
   if (!d.existsSync()){
      print("${args[0]} does not exist");
      return;
